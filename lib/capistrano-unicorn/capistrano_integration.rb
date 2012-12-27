@@ -16,12 +16,11 @@ module CapistranoUnicorn
     def self.load_into(capistrano_config)
       capistrano_config.load do
         before(CapistranoIntegration::TASKS) do
-          _cset(urole_env)        { (fetch(:rails_env) rescue 'production') }
+          _cset(:app_env)        { (fetch(:rails_env) rescue 'production') }
           _cset(:unicorn_pid)    { "#{fetch(:current_path)}/tmp/pids/unicorn.pid" }
-          _cset(:unicorn_env)    { fetch(urole_env) }
+          _cset(:unicorn_env)    { fetch(:app_env) }
           _cset(:unicorn_bin)    { "unicorn" }
           _cset(:unicorn_bundle) { fetch(:bundle_cmd) rescue 'bundle' }
-          _cset(:urole) { fetch(:unicorn_role) rescue 'app' }
         end
 
         # Check if a remote process exists using its pid file
@@ -120,22 +119,22 @@ module CapistranoUnicorn
         #
         namespace :unicorn do
           desc 'Start Unicorn master process'
-          task :start, :roles => urole, :except => {:no_release => true} do
+          task :start, :roles => :web, :except => {:no_release => true} do
             run start_unicorn
           end
 
           desc 'Stop Unicorn'
-          task :stop, :roles => urole, :except => {:no_release => true} do
+          task :stop, :roles => :web, :except => {:no_release => true} do
             run kill_unicorn('QUIT')
           end
 
           desc 'Immediately shutdown Unicorn'
-          task :shutdown, :roles => urole, :except => {:no_release => true} do
+          task :shutdown, :roles => :web, :except => {:no_release => true} do
             run kill_unicorn('TERM')
           end
 
           desc 'Restart Unicorn'
-          task :restart, :roles => urole, :except => {:no_release => true} do
+          task :restart, :roles => :web, :except => {:no_release => true} do
             run <<-END
               if #{unicorn_is_running?}; then
                 echo "Restarting Unicorn...";
@@ -153,7 +152,7 @@ module CapistranoUnicorn
           end
 
           desc 'Reload Unicorn'
-          task :reload, :roles => urole, :except => {:no_release => true} do
+          task :reload, :roles => :web, :except => {:no_release => true} do
             run <<-END
               if #{unicorn_is_running?}; then
                 echo "Reloading Unicorn...";
@@ -165,7 +164,7 @@ module CapistranoUnicorn
           end
 
           desc 'Add a new worker'
-          task :add_worker, :roles => urole, :except => {:no_release => true} do
+          task :add_worker, :roles => :web, :except => {:no_release => true} do
             run <<-END
               if #{unicorn_is_running?}; then
                 echo "Adding a new Unicorn worker...";
@@ -177,7 +176,7 @@ module CapistranoUnicorn
           end
 
           desc 'Remove amount of workers'
-          task :remove_worker, :roles => urole, :except => {:no_release => true} do
+          task :remove_worker, :roles => :web, :except => {:no_release => true} do
             run <<-END
               if #{unicorn_is_running?}; then
                 echo "Removing a Unicorn worker...";
